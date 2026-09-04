@@ -33,13 +33,13 @@ func main() {
 
 	// middleware.StartCleanup() // Enable when rate limiting is introduced (v1.1)
 
-	router := router.NewRouter(db, cfg)
+	engine := router.NewRouter(db, cfg)
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)
 
 	log.Printf("Server listening on http://localhost%s", addr)
 
-	if err := router.Run(addr); err != nil {
+	if err := engine.Run(addr); err != nil {
 		log.Fatalf("Server Failed")
 	}
 

@@ -25,6 +25,16 @@ func Connect(cfg config.Config) (*mongo.Client, *mongo.Database, error) {
 	}
 	//ping check
 	if err := client.Ping(ctx, nil); err != nil {
+		disconnectCtx, disconnectCancel := context.WithTimeout(
+			context.Background(),
+			10*time.Second,
+		)
+		defer disconnectCancel()
+
+		if disconnectErr := client.Disconnect(disconnectCtx); disconnectErr != nil {
+			log.Printf("mongo disconnect after failed ping: %v", disconnectErr)
+		}
+
 		return nil, nil, fmt.Errorf("mongo ping failed: %w", err)
 	}
 
