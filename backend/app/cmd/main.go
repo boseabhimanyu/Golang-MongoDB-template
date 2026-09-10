@@ -1,9 +1,11 @@
 package main
 
 import (
-	"basic-app/backend/app/config"
-	"basic-app/backend/app/database"
-	"basic-app/backend/app/router"
+	"basic-app/config"
+	"basic-app/database"
+	mongorepo "basic-app/repository/mongo"
+	"basic-app/router"
+	"context"
 	"fmt"
 	"log"
 
@@ -13,13 +15,11 @@ import (
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		//log.Fatalf("Config Error")
 		log.Fatalf("Config Error: %v", err)
 	}
 
 	client, db, err := database.Connect(cfg)
 	if err != nil {
-		//log.Fatalf("db error")
 		log.Fatalf("DB Error: %v", err)
 	}
 
@@ -29,9 +29,17 @@ func main() {
 		}
 	}()
 
+	// Ensure MongoDB indexes exist
+	if err := mongorepo.EnsureUserIndexes(
+		context.Background(),
+		db,
+	); err != nil {
+		log.Fatalf("Failed to create user indexes: %v", err)
+	}
+
 	gin.SetMode(cfg.GinMode)
 
-	// middleware.StartCleanup() // Enable when rate limiting is introduced (v1.1)
+	// middleware.StartCleanup()
 
 	engine := router.NewRouter(db, cfg)
 
@@ -40,7 +48,6 @@ func main() {
 	log.Printf("Server listening on http://localhost%s", addr)
 
 	if err := engine.Run(addr); err != nil {
-		log.Fatalf("Server Failed")
+		log.Fatalf("Server Failed: %v", err)
 	}
-
 }

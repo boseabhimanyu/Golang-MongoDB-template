@@ -1,7 +1,7 @@
 package database
 
 import (
-	"basic-app/backend/app/config"
+	"basic-app/config"
 	"context"
 	"fmt"
 	"log"

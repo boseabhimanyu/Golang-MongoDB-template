@@ -1,7 +1,7 @@
 package router
 
 import (
-	"basic-app/backend/app/config"
+	"basic-app/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +15,7 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"ok":     true,
-			"status": "ok",
+			"status": "application is up",
 		})
 	})
 

@@ -69,3 +69,6 @@ dist-ssr
 
 # Local UI dev tools and test initializers
 dev-helpers/examples/
+
+Uploads/**
+!.gitkeep

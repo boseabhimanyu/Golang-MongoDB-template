@@ -17,8 +17,12 @@ type Config struct {
 	JWTSecret              string
 	JWTExpiryHours         int
 	RefreshTokenExpiryDays int
-	CookieSecure           bool
-	GinMode                string
+
+	AuthAccessCookie  string
+	AuthRefreshCookie string
+
+	CookieSecure bool
+	GinMode      string
 }
 
 func Load() (Config, error) {
@@ -82,6 +86,22 @@ func Load() (Config, error) {
 		)
 	}
 
+	// Access cookie name
+	authAccessCookie, err := extractEnv(
+		"AUTH_ACCESS_COOKIE",
+	)
+	if err != nil {
+		return Config{}, err
+	}
+
+	// Refresh cookie name
+	authRefreshCookie, err := extractEnv(
+		"AUTH_REFRESH_COOKIE",
+	)
+	if err != nil {
+		return Config{}, err
+	}
+
 	cookieSecureStr, err := extractEnv("COOKIE_SECURE")
 	if err != nil {
 		return Config{}, err
@@ -95,7 +115,7 @@ func Load() (Config, error) {
 		)
 	}
 
-	gin_mode, err := extractEnv("GIN_MODE")
+	ginMode, err := extractEnv("GIN_MODE")
 	if err != nil {
 		return Config{}, err
 	}
@@ -106,9 +126,11 @@ func Load() (Config, error) {
 		ServerPort:             port,
 		JWTSecret:              jwtSecret,
 		JWTExpiryHours:         jwtExpiryHours,
+		AuthAccessCookie:       authAccessCookie,
+		AuthRefreshCookie:      authRefreshCookie,
 		RefreshTokenExpiryDays: refreshTokenExpiryDays,
 		CookieSecure:           cookieSecure,
-		GinMode:                gin_mode,
+		GinMode:                ginMode,
 	}
 
 	if err := config.Validate(); err != nil {
@@ -148,6 +170,21 @@ func (c Config) Validate() error {
 		)
 	}
 
+	if c.AuthAccessCookie == "" {
+		return errors.New(
+			"access token cookie name is missing",
+		)
+	}
+
+	if c.AuthRefreshCookie == "" {
+		return errors.New(
+			"refresh token cookie name is missing",
+		)
+	}
+
+	if c.GinMode == "" {
+		return errors.New("Gin mode is missing")
+	}
 	return nil
 }
 
