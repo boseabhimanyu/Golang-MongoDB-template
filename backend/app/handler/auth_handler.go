@@ -293,3 +293,29 @@ func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
 		})
 	}
 }
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	refreshToken, err := c.Cookie(h.config.AuthRefreshCookie)
+
+	if err == nil {
+		err = h.authService.Logout(
+			c.Request.Context(),
+			refreshToken,
+		)
+
+		if err != nil &&
+			!errors.Is(err, services.ErrInvalidRefreshToken) {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "unable to logout",
+			})
+			return
+		}
+	}
+
+	// Always clear browser cookies, including expired/invalid ones.
+	h.clearAuthCookies(c)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "logout successful",
+	})
+}

@@ -44,6 +44,7 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 
 		protected.PATCH("/password", authHandler.ChangePassword)
 		protected.POST("/refresh", authHandler.Refresh)
+		protected.POST("/logout", authHandler.Logout)
 	}
 
 	return r

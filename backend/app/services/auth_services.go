@@ -375,3 +375,37 @@ func (s *AuthService) RefreshToken(
 		RefreshExpiry: refreshExpiry,
 	}, nil
 }
+
+func (s *AuthService) Logout(
+	ctx context.Context,
+	refreshToken string,
+) error {
+	claims, err := auth.ValidateRefreshToken(
+		refreshToken,
+		s.config.JWTSecret,
+	)
+	if err != nil {
+		return ErrInvalidRefreshToken
+	}
+
+	user, err := s.userRepository.FindByID(ctx, claims.UserID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return ErrInvalidRefreshToken
+		}
+
+		return err
+	}
+
+	tokenHash := auth.HashRefreshToken(refreshToken)
+
+	if user.RefreshTokenHash == "" ||
+		!hmac.Equal(
+			[]byte(tokenHash),
+			[]byte(user.RefreshTokenHash),
+		) {
+		return ErrInvalidRefreshToken
+	}
+
+	return s.ClearRefreshToken(ctx, user.ID.Hex())
+}
