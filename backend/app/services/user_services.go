@@ -28,6 +28,7 @@ var (
 	ErrInvalidUserID         = errors.New("invalid user id")
 	ErrInvalidPassword       = errors.New("invalid password")
 	ErrInvalidUserRole       = errors.New("invalid user role")
+	ErrInvalidCredentials    = errors.New("invalid credentials")
 )
 
 type UserService struct {

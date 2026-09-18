@@ -1,6 +1,8 @@
 package services
 
 import (
+	"basic-app/auth"
+	"basic-app/config"
 	"basic-app/dto"
 	"basic-app/models"
 	"basic-app/repository"
@@ -8,19 +10,23 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
 	userRepository repository.UserRepository
+	config         config.Config
 }
 
 func NewAuthService(
 	userRepository repository.UserRepository,
+	cfg config.Config,
 ) *AuthService {
 	return &AuthService{
 		userRepository: userRepository,
+		config:         cfg,
 	}
 }
 
@@ -220,4 +226,80 @@ func (s *AuthService) ClearRefreshToken(
 		userID,
 		"",
 	)
+}
+
+func (s *AuthService) Login(
+	ctx context.Context,
+	req *dto.LoginRequest,
+) (*dto.LoginResult, error) {
+	identifier := strings.ToLower(
+		strings.TrimSpace(req.Identifier),
+	)
+
+	if identifier == "" || req.Password == "" {
+		return nil, ErrInvalidCredentials
+	}
+
+	user, err := s.userRepository.FindByLoginIdentifier(
+		ctx,
+		identifier,
+	)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return nil, ErrInvalidCredentials
+		}
+
+		return nil, err
+	}
+
+	if !user.Status {
+		return nil, ErrInvalidCredentials
+	}
+
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(user.PasswordHash),
+		[]byte(req.Password),
+	); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	accessToken, err := auth.GenerateToken(
+		user.ID.Hex(),
+		string(user.Role),
+		s.config.JWTSecret,
+		s.config.JWTExpiryHours,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, refreshExpiry, err := auth.GenerateRefreshToken(
+		user.ID.Hex(),
+		s.config.JWTSecret,
+		s.config.RefreshTokenExpiryDays,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshTokenHash := auth.HashRefreshToken(refreshToken)
+
+	if err := s.UpdateRefreshToken(
+		ctx,
+		user.ID.Hex(),
+		refreshTokenHash,
+	); err != nil {
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	user.LastLoginAt = &now
+	user.RefreshTokenHash = ""
+
+	return &dto.LoginResult{
+		User:          user,
+		AccessToken:   accessToken,
+		RefreshToken:  refreshToken,
+		RefreshExpiry: refreshExpiry,
+	}, nil
 }

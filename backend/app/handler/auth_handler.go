@@ -2,8 +2,12 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
+	"strings"
+	"time"
 
+	"basic-app/config"
 	"basic-app/dto"
 	"basic-app/services"
 
@@ -12,13 +16,16 @@ import (
 
 type AuthHandler struct {
 	authService *services.AuthService
+	config      config.Config
 }
 
 func NewAuthHandler(
 	authService *services.AuthService,
+	cfg config.Config,
 ) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		config:      cfg,
 	}
 }
 
@@ -130,4 +137,91 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "password changed successfully",
 	})
+}
+
+func (h *AuthHandler) Login(c *gin.Context) {
+	var req dto.LoginRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	result, err := h.authService.Login(
+		c.Request.Context(),
+		&req,
+	)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidCredentials) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "invalid credentials",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "unable to login",
+		})
+
+		log.Printf(
+			"login failed for identifier %q: %v",
+			req.Identifier,
+			err,
+		)
+		return
+	}
+
+	now := time.Now().UTC()
+
+	h.setAuthCookie(
+		c,
+		h.config.AuthAccessCookie,
+		result.AccessToken,
+		now.Add(
+			time.Duration(h.config.JWTExpiryHours)*time.Hour,
+		),
+	)
+
+	h.setAuthCookie(
+		c,
+		h.config.AuthRefreshCookie,
+		result.RefreshToken,
+		result.RefreshExpiry,
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "login successful",
+		"user":    result.User,
+	})
+}
+
+func (h *AuthHandler) setAuthCookie(
+	c *gin.Context,
+	name string,
+	value string,
+	expiresAt time.Time,
+) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/",
+		Expires:  expiresAt,
+		MaxAge:   int(time.Until(expiresAt).Seconds()),
+		HttpOnly: true,
+		Secure:   h.config.CookieSecure,
+		// SameSite: cookieSameSite(h.config.CookieSameSite),
+	})
+}
+
+func cookieSameSite(value string) http.SameSite {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "strict":
+		return http.SameSiteStrictMode
+	case "none":
+		return http.SameSiteNoneMode
+	default:
+		return http.SameSiteLaxMode
+	}
 }

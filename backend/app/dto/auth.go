@@ -1,5 +1,10 @@
 package dto
 
+import (
+	"basic-app/models"
+	"time"
+)
+
 // RegisterRequest contains the allowed fields
 // for public customer registration.
 type RegisterRequest struct {
@@ -20,4 +25,16 @@ type RegisterRequest struct {
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"currentPassword"`
 	NewPassword     string `json:"newPassword"`
+}
+
+type LoginRequest struct {
+	Identifier string `json:"identifier"`
+	Password   string `json:"password"`
+}
+
+type LoginResult struct {
+	User          *models.User
+	AccessToken   string
+	RefreshToken  string
+	RefreshExpiry time.Time
 }

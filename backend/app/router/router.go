@@ -17,8 +17,8 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 
 	// Dependencies
 	userRepository := mongorepo.NewUserRepository(database)
-	authService := services.NewAuthService(userRepository)
-	authHandler := handler.NewAuthHandler(authService)
+	authService := services.NewAuthService(userRepository, cfg)
+	authHandler := handler.NewAuthHandler(authService, cfg)
 
 	// Global/Public Endpoints
 	r.GET("/health", func(c *gin.Context) {
@@ -33,6 +33,7 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 	{
 		// Public
 		authRoutes.POST("/register", authHandler.Register)
+		authRoutes.POST("/login", authHandler.Login)
 
 		// Authenticated
 		protected := authRoutes.Group("")

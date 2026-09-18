@@ -49,7 +49,13 @@ func EnsureUserIndexes(
 			},
 			Options: options.Index().
 				SetUnique(true).
-				SetSparse(true).
+				SetPartialFilterExpression(
+					bson.M{
+						"alt_email": bson.M{
+							"$gt": "",
+						},
+					},
+				).
 				SetName("unique_alt_email"),
 		},
 	}
