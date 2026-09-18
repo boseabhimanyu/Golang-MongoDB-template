@@ -44,6 +44,13 @@ func NewUserService(
 	}
 }
 
+func (s *UserService) GetMe(
+	ctx context.Context,
+	userID string,
+) (*models.User, error) {
+	return s.userRepository.FindByID(ctx, userID)
+}
+
 // GetByID returns a user by ID.
 func (s *UserService) GetByID(
 	ctx context.Context,

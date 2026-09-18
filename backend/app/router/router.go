@@ -18,7 +18,9 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 	// Dependencies
 	userRepository := mongorepo.NewUserRepository(database)
 	authService := services.NewAuthService(userRepository, cfg)
+	userService := services.NewUserService(userRepository)
 	authHandler := handler.NewAuthHandler(authService, cfg)
+	userHandler := handler.NewUserHandler(userService)
 
 	// Global/Public Endpoints
 	r.GET("/health", func(c *gin.Context) {
@@ -45,6 +47,7 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 		protected.PATCH("/password", authHandler.ChangePassword)
 		protected.POST("/refresh", authHandler.Refresh)
 		protected.POST("/logout", authHandler.Logout)
+		protected.GET("/me", userHandler.Me)
 	}
 
 	return r
