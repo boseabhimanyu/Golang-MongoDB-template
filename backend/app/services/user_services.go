@@ -21,9 +21,12 @@ import (
 
 var (
 	ErrEmailAlreadyExists    = errors.New("email already exists")
+	ErrAltEmailAlreadyExists = errors.New("alternate email already exists")
+	ErrAltEmailSameAsEmail   = errors.New("alternate email must be different from email")
 	ErrUsernameAlreadyExists = errors.New("username already exists")
-	ErrInvalidPassword       = errors.New("invalid password")
+	ErrPhoneAlreadyExists    = errors.New("phone number already exists")
 	ErrInvalidUserID         = errors.New("invalid user id")
+	ErrInvalidPassword       = errors.New("invalid password")
 	ErrInvalidUserRole       = errors.New("invalid user role")
 )
 
@@ -59,7 +62,7 @@ func (s *UserService) GetByEmail(
 		strings.TrimSpace(email),
 	)
 
-	return s.userRepository.FindByEmail(
+	return s.userRepository.FindByAnyEmail(
 		ctx,
 		email,
 	)
@@ -150,7 +153,7 @@ func (s *UserService) UpdateProfile(
 
 	// Check whether another user already uses this email.
 	if email != currentUser.Email {
-		existingUser, err := s.userRepository.FindByEmail(
+		existingUser, err := s.userRepository.FindByAnyEmail(
 			ctx,
 			email,
 		)
@@ -357,7 +360,7 @@ func (s *UserService) CreateCustomer(
 	}
 
 	// Check duplicate email.
-	existingUser, err := s.userRepository.FindByEmail(ctx, email)
+	existingUser, err := s.userRepository.FindByAnyEmail(ctx, email)
 	if err == nil && existingUser != nil {
 		return nil, ErrEmailAlreadyExists
 	}

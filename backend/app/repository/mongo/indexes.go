@@ -35,6 +35,23 @@ func EnsureUserIndexes(
 				SetUnique(true).
 				SetName("unique_username"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "phone", Value: 1},
+			},
+			Options: options.Index().
+				SetUnique(true).
+				SetName("unique_phone"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "alt_email", Value: 1},
+			},
+			Options: options.Index().
+				SetUnique(true).
+				SetSparse(true).
+				SetName("unique_alt_email"),
+		},
 	}
 
 	_, err := collection.Indexes().CreateMany(ctx, indexes)

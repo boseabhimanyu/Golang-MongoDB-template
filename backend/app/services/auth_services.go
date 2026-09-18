@@ -30,9 +30,6 @@ func (s *AuthService) RegisterUser(
 	ctx context.Context,
 	req *dto.RegisterRequest,
 ) (*models.User, error) {
-	var err error
-
-	// Validate first name.
 	firstName, err := validation.ValidateName(
 		req.FirstName,
 		"first name",
@@ -41,7 +38,6 @@ func (s *AuthService) RegisterUser(
 		return nil, err
 	}
 
-	// Validate last name.
 	lastName, err := validation.ValidateName(
 		req.LastName,
 		"last name",
@@ -50,76 +46,80 @@ func (s *AuthService) RegisterUser(
 		return nil, err
 	}
 
-	// Validate username.
-	username, err := validation.ValidateUsername(
-		req.Username,
-	)
+	username, err := validation.ValidateUsername(req.Username)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate email.
-	email, err := validation.ValidateEmail(
-		req.Email,
-		true,
-	)
+	email, err := validation.ValidateEmail(req.Email, true)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate alternate email.
-	altEmail, err := validation.ValidateEmail(
-		req.AltEmail,
-		false,
-	)
+	altEmail, err := validation.ValidateEmail(req.AltEmail, false)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate phone.
-	phone, err := validation.ValidatePhone(
-		req.Phone,
-	)
+	if altEmail != "" && altEmail == email {
+		return nil, ErrAltEmailSameAsEmail
+	}
+
+	phone, err := validation.ValidatePhone(req.Phone)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate password.
 	if err := validation.ValidatePassword(req.Password); err != nil {
 		return nil, err
 	}
 
-	// Check duplicate email.
-	existingUser, err := s.userRepository.FindByEmail(
-		ctx,
-		email,
-	)
-
+	// Checks primary email against both email and alternate-email fields.
+	existingUser, err := s.userRepository.FindByAnyEmail(ctx, email)
 	if err == nil && existingUser != nil {
 		return nil, ErrEmailAlreadyExists
 	}
 
-	if err != nil &&
-		!errors.Is(err, repository.ErrUserNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
 		return nil, err
 	}
 
-	// Check duplicate username.
-	existingUser, err = s.userRepository.FindByUsername(
-		ctx,
-		username,
-	)
+	// Checks optional alternate email against both email fields.
+	if altEmail != "" {
+		existingUser, err = s.userRepository.FindByAnyEmail(
+			ctx,
+			altEmail,
+		)
+		if err == nil && existingUser != nil {
+			return nil, ErrAltEmailAlreadyExists
+		}
 
+		if err != nil && !errors.Is(
+			err,
+			repository.ErrUserNotFound,
+		) {
+			return nil, err
+		}
+	}
+
+	existingUser, err = s.userRepository.FindByUsername(ctx, username)
 	if err == nil && existingUser != nil {
 		return nil, ErrUsernameAlreadyExists
 	}
 
-	if err != nil &&
-		!errors.Is(err, repository.ErrUserNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
 		return nil, err
 	}
 
-	// Hash password.
+	existingUser, err = s.userRepository.FindByPhone(ctx, phone)
+	if err == nil && existingUser != nil {
+		return nil, ErrPhoneAlreadyExists
+	}
+
+	if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
+		return nil, err
+	}
+
 	passwordHash, err := bcrypt.GenerateFromPassword(
 		[]byte(req.Password),
 		bcrypt.DefaultCost,
@@ -128,7 +128,6 @@ func (s *AuthService) RegisterUser(
 		return nil, err
 	}
 
-	// Create model internally.
 	user := models.NewCustomerUser()
 
 	user.FirstName = firstName
@@ -137,11 +136,7 @@ func (s *AuthService) RegisterUser(
 	user.Email = email
 	user.AltEmail = altEmail
 	user.Phone = phone
-
 	user.PasswordHash = string(passwordHash)
-
-	// Role is already RoleCustomer from NewCustomerUser().
-	// Status is already true from NewCustomerUser().
 
 	if err := s.userRepository.Create(ctx, &user); err != nil {
 		return nil, err

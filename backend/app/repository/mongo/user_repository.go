@@ -10,6 +10,7 @@ import (
 	"basic-app/repository"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	mongodriver "go.mongodb.org/mongo-driver/v2/mongo"
 )
 
@@ -97,36 +98,36 @@ func (r *UserRepository) FindByID(
 }
 
 // FindByEmail finds a user by email.
-func (r *UserRepository) FindByEmail(
-	ctx context.Context,
-	email string,
-) (*models.User, error) {
-	ctx, cancel := context.WithTimeout(ctx, databaseTimeout)
-	defer cancel()
+// func (r *UserRepository) FindByEmail(
+// 	ctx context.Context,
+// 	email string,
+// ) (*models.User, error) {
+// 	ctx, cancel := context.WithTimeout(ctx, databaseTimeout)
+// 	defer cancel()
 
-	email = strings.ToLower(
-		strings.TrimSpace(email),
-	)
+// 	email = strings.ToLower(
+// 		strings.TrimSpace(email),
+// 	)
 
-	var user models.User
+// 	var user models.User
 
-	err := r.collection.FindOne(
-		ctx,
-		bson.M{
-			"email": email,
-		},
-	).Decode(&user)
+// 	err := r.collection.FindOne(
+// 		ctx,
+// 		bson.M{
+// 			"email": email,
+// 		},
+// 	).Decode(&user)
 
-	if err != nil {
-		if errors.Is(err, mongodriver.ErrNoDocuments) {
-			return nil, repository.ErrUserNotFound
-		}
+// 	if err != nil {
+// 		if errors.Is(err, mongodriver.ErrNoDocuments) {
+// 			return nil, repository.ErrUserNotFound
+// 		}
 
-		return nil, err
-	}
+// 		return nil, err
+// 	}
 
-	return &user, nil
-}
+// 	return &user, nil
+// }
 
 // FindByUsername finds a user by username.
 func (r *UserRepository) FindByUsername(
@@ -397,4 +398,58 @@ func (r *UserRepository) Delete(
 	}
 
 	return nil
+}
+
+func (r *UserRepository) FindByPhone(
+	ctx context.Context,
+	phone string,
+) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var user models.User
+
+	err := r.collection.FindOne(
+		ctx,
+		bson.M{"phone": phone},
+	).Decode(&user)
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, repository.ErrUserNotFound
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) FindByAnyEmail(
+	ctx context.Context,
+	email string,
+) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var user models.User
+
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"email": email},
+			bson.M{"alt_email": email},
+		},
+	}
+
+	err := r.collection.FindOne(ctx, filter).Decode(&user)
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, repository.ErrUserNotFound
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
