@@ -8,3 +8,10 @@ type Claims struct {
 
 	jwt.RegisteredClaims
 }
+
+type RefreshClaims struct {
+	UserID string `json:"user_id"`
+	Type   string `json:"type"`
+
+	jwt.RegisteredClaims
+}

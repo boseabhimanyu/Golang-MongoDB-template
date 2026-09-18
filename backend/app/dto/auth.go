@@ -38,3 +38,9 @@ type LoginResult struct {
 	RefreshToken  string
 	RefreshExpiry time.Time
 }
+
+type RefreshResult struct {
+	AccessToken   string
+	RefreshToken  string
+	RefreshExpiry time.Time
+}

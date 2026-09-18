@@ -47,17 +47,19 @@ func GenerateRefreshToken(
 	secret string,
 	expiryDays int,
 ) (string, time.Time, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 
 	expiresAt := now.Add(
 		time.Duration(expiryDays) * 24 * time.Hour,
 	)
 
-	claims := jwt.MapClaims{
-		"user_id": userID,
-		"type":    "refresh",
-		"exp":     expiresAt.Unix(),
-		"iat":     now.Unix(),
+	claims := RefreshClaims{
+		UserID: userID,
+		Type:   "refresh",
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
 	}
 
 	token := jwt.NewWithClaims(
@@ -72,7 +74,6 @@ func GenerateRefreshToken(
 
 	return tokenString, expiresAt, nil
 }
-
 func ValidateToken(
 	tokenString string,
 	secret string,
@@ -83,7 +84,7 @@ func ValidateToken(
 		tokenString,
 		claims,
 		func(token *jwt.Token) (any, error) {
-			if token.Method != jwt.SigningMethodHS256 {
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 				return nil, errors.New("invalid signing method")
 			}
 
@@ -97,6 +98,34 @@ func ValidateToken(
 
 	if !token.Valid {
 		return nil, errors.New("invalid token")
+	}
+
+	return claims, nil
+}
+
+func ValidateRefreshToken(
+	tokenString string,
+	secret string,
+) (*RefreshClaims, error) {
+	claims := &RefreshClaims{}
+
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(token *jwt.Token) (any, error) {
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, errors.New("invalid signing method")
+			}
+
+			return []byte(secret), nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid || claims.Type != "refresh" {
+		return nil, errors.New("invalid refresh token")
 	}
 
 	return claims, nil

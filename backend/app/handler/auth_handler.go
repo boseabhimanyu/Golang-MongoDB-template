@@ -225,3 +225,71 @@ func cookieSameSite(value string) http.SameSite {
 		return http.SameSiteLaxMode
 	}
 }
+
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	refreshToken, err := c.Cookie(h.config.AuthRefreshCookie)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "refresh token missing",
+		})
+		return
+	}
+
+	result, err := h.authService.RefreshToken(
+		c.Request.Context(),
+		refreshToken,
+	)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidRefreshToken) {
+			h.clearAuthCookies(c)
+
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "invalid refresh token",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "unable to refresh token",
+		})
+		return
+	}
+
+	now := time.Now().UTC()
+
+	h.setAuthCookie(
+		c,
+		h.config.AuthAccessCookie,
+		result.AccessToken,
+		now.Add(
+			time.Duration(h.config.JWTExpiryHours)*time.Hour,
+		),
+	)
+
+	h.setAuthCookie(
+		c,
+		h.config.AuthRefreshCookie,
+		result.RefreshToken,
+		result.RefreshExpiry,
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "token refreshed successfully",
+	})
+}
+
+func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
+	for _, name := range []string{
+		h.config.AuthAccessCookie,
+		h.config.AuthRefreshCookie,
+	} {
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			HttpOnly: true,
+			Secure:   h.config.CookieSecure,
+		})
+	}
+}

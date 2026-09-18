@@ -8,6 +8,7 @@ import (
 	"basic-app/repository"
 	"basic-app/validation"
 	"context"
+	"crypto/hmac"
 	"errors"
 	"strings"
 	"time"
@@ -300,6 +301,77 @@ func (s *AuthService) Login(
 		User:          user,
 		AccessToken:   accessToken,
 		RefreshToken:  refreshToken,
+		RefreshExpiry: refreshExpiry,
+	}, nil
+}
+
+func (s *AuthService) RefreshToken(
+	ctx context.Context,
+	refreshToken string,
+) (*dto.RefreshResult, error) {
+	claims, err := auth.ValidateRefreshToken(
+		refreshToken,
+		s.config.JWTSecret,
+	)
+	if err != nil {
+		return nil, ErrInvalidRefreshToken
+	}
+
+	user, err := s.userRepository.FindByID(ctx, claims.UserID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return nil, ErrInvalidRefreshToken
+		}
+
+		return nil, err
+	}
+
+	if !user.Status {
+		return nil, ErrInvalidRefreshToken
+	}
+
+	tokenHash := auth.HashRefreshToken(refreshToken)
+
+	if user.RefreshTokenHash == "" ||
+		!hmac.Equal(
+			[]byte(tokenHash),
+			[]byte(user.RefreshTokenHash),
+		) {
+		return nil, ErrInvalidRefreshToken
+	}
+
+	accessToken, err := auth.GenerateToken(
+		user.ID.Hex(),
+		string(user.Role),
+		s.config.JWTSecret,
+		s.config.JWTExpiryHours,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	newRefreshToken, refreshExpiry, err := auth.GenerateRefreshToken(
+		user.ID.Hex(),
+		s.config.JWTSecret,
+		s.config.RefreshTokenExpiryDays,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	newRefreshTokenHash := auth.HashRefreshToken(newRefreshToken)
+
+	if err := s.UpdateRefreshToken(
+		ctx,
+		user.ID.Hex(),
+		newRefreshTokenHash,
+	); err != nil {
+		return nil, err
+	}
+
+	return &dto.RefreshResult{
+		AccessToken:   accessToken,
+		RefreshToken:  newRefreshToken,
 		RefreshExpiry: refreshExpiry,
 	}, nil
 }
