@@ -30,6 +30,7 @@ var (
 	ErrInvalidUserRole       = errors.New("invalid user role")
 	ErrInvalidCredentials    = errors.New("invalid credentials")
 	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
+	ErrNoFieldsToUpdate      = errors.New("no fields to update")
 )
 
 type UserService struct {
@@ -99,127 +100,214 @@ func (s *UserService) UpdateProfile(
 	ctx context.Context,
 	userID string,
 	req *dto.UpdateUserProfileRequest,
-) error {
-	currentUser, err := s.userRepository.FindByID(
-		ctx,
-		userID,
-	)
-	if err != nil {
-		return err
+) (*models.User, error) {
+	if req == nil {
+		return nil, ErrNoFieldsToUpdate
 	}
 
-	// Validate first name.
-	firstName, err := validation.ValidateName(
-		*req.FirstName,
-		"first name",
-	)
+	currentUser, err := s.userRepository.FindByID(ctx, userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Validate last name.
-	lastName, err := validation.ValidateName(
-		*req.LastName,
-		"last name",
-	)
-	if err != nil {
-		return err
+	if !currentUser.Status {
+		return nil, ErrInvalidCredentials
 	}
 
-	// Validate username.
-	username, err := validation.ValidateUsername(
-		*req.Username,
-	)
-	if err != nil {
-		return err
+	// Work on a copy. The database is changed only after all validation passes.
+	user := *currentUser
+	hasUpdates := false
+
+	if req.FirstName != nil {
+		firstName, err := validation.ValidateName(
+			*req.FirstName,
+			"first name",
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		user.FirstName = firstName
+		hasUpdates = true
 	}
 
-	// Validate required email.
-	email, err := validation.ValidateEmail(
-		*req.Email,
-		true,
-	)
-	if err != nil {
-		return err
+	if req.LastName != nil {
+		lastName, err := validation.ValidateName(
+			*req.LastName,
+			"last name",
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		user.LastName = lastName
+		hasUpdates = true
 	}
 
-	// Validate optional alternate email.
-	altEmail, err := validation.ValidateEmail(
-		*req.AltEmail,
-		false,
-	)
-	if err != nil {
-		return err
+	if req.Username != nil {
+		username, err := validation.ValidateUsername(*req.Username)
+		if err != nil {
+			return nil, err
+		}
+
+		user.Username = username
+		hasUpdates = true
 	}
 
-	// Validate phone.
-	phone, err := validation.ValidatePhone(
-		*req.Phone,
-	)
-	if err != nil {
-		return err
+	if req.Email != nil {
+		email, err := validation.ValidateEmail(*req.Email, true)
+		if err != nil {
+			return nil, err
+		}
+
+		user.Email = email
+		hasUpdates = true
 	}
 
-	// Check whether another user already uses this email.
-	if email != currentUser.Email {
+	if req.AltEmail != nil {
+		altEmail, err := validation.ValidateEmail(
+			*req.AltEmail,
+			false,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		user.AltEmail = altEmail
+		hasUpdates = true
+	}
+
+	if req.Phone != nil {
+		phone, err := validation.ValidatePhone(*req.Phone)
+		if err != nil {
+			return nil, err
+		}
+
+		user.Phone = phone
+		hasUpdates = true
+	}
+
+	if req.DateOfBirth != nil {
+		dateOfBirth, err := validation.ValidateDateOfBirth(
+			*req.DateOfBirth,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		user.DateOfBirth = dateOfBirth
+		hasUpdates = true
+	}
+
+	if req.AddressLine1 != nil {
+		user.AddressLine1 = strings.TrimSpace(*req.AddressLine1)
+		hasUpdates = true
+	}
+
+	if req.AddressLine2 != nil {
+		user.AddressLine2 = strings.TrimSpace(*req.AddressLine2)
+		hasUpdates = true
+	}
+
+	if req.City != nil {
+		user.City = strings.TrimSpace(*req.City)
+		hasUpdates = true
+	}
+
+	if req.State != nil {
+		user.State = strings.TrimSpace(*req.State)
+		hasUpdates = true
+	}
+
+	if req.PinCode != nil {
+		user.PinCode = strings.TrimSpace(*req.PinCode)
+		hasUpdates = true
+	}
+
+	if !hasUpdates {
+		return nil, ErrNoFieldsToUpdate
+	}
+
+	if user.AltEmail != "" && user.AltEmail == user.Email {
+		return nil, ErrAltEmailSameAsEmail
+	}
+
+	// Primary email must not belong to another user's email/alternate email.
+	if user.Email != currentUser.Email {
 		existingUser, err := s.userRepository.FindByAnyEmail(
 			ctx,
-			email,
+			user.Email,
 		)
-
 		if err == nil &&
 			existingUser != nil &&
 			existingUser.ID != currentUser.ID {
-			return ErrEmailAlreadyExists
+			return nil, ErrEmailAlreadyExists
 		}
 
 		if err != nil &&
 			!errors.Is(err, repository.ErrUserNotFound) {
-			return err
+			return nil, err
 		}
 	}
 
-	// Check whether another user already uses this username.
-	if username != currentUser.Username {
+	// Alternate email must not belong to another user's email/alternate email.
+	if user.AltEmail != "" &&
+		user.AltEmail != currentUser.AltEmail {
+		existingUser, err := s.userRepository.FindByAnyEmail(
+			ctx,
+			user.AltEmail,
+		)
+		if err == nil &&
+			existingUser != nil &&
+			existingUser.ID != currentUser.ID {
+			return nil, ErrAltEmailAlreadyExists
+		}
+
+		if err != nil &&
+			!errors.Is(err, repository.ErrUserNotFound) {
+			return nil, err
+		}
+	}
+
+	if user.Username != currentUser.Username {
 		existingUser, err := s.userRepository.FindByUsername(
 			ctx,
-			username,
+			user.Username,
 		)
-
 		if err == nil &&
 			existingUser != nil &&
 			existingUser.ID != currentUser.ID {
-			return ErrUsernameAlreadyExists
+			return nil, ErrUsernameAlreadyExists
 		}
 
 		if err != nil &&
 			!errors.Is(err, repository.ErrUserNotFound) {
-			return err
+			return nil, err
 		}
 	}
 
-	// Update only allowed fields.
-	currentUser.FirstName = firstName
-	currentUser.LastName = lastName
-	currentUser.Username = username
+	if user.Phone != currentUser.Phone {
+		existingUser, err := s.userRepository.FindByPhone(
+			ctx,
+			user.Phone,
+		)
+		if err == nil &&
+			existingUser != nil &&
+			existingUser.ID != currentUser.ID {
+			return nil, ErrPhoneAlreadyExists
+		}
 
-	currentUser.Email = email
-	currentUser.AltEmail = altEmail
-	currentUser.Phone = phone
+		if err != nil &&
+			!errors.Is(err, repository.ErrUserNotFound) {
+			return nil, err
+		}
+	}
 
-	currentUser.DateOfBirth = req.DateOfBirth
+	if err := s.userRepository.Update(ctx, &user); err != nil {
+		return nil, err
+	}
 
-	currentUser.AddressLine1 = *req.AddressLine1
-	currentUser.AddressLine2 = *req.AddressLine2
-	currentUser.City = *req.City
-	currentUser.State = *req.State
-	currentUser.PinCode = *req.PinCode
-
-	return s.userRepository.Update(
-		ctx,
-		currentUser,
-	)
-
+	return &user, nil
 }
 
 // UpdateProfilePic updates only the profile image URL/path.
