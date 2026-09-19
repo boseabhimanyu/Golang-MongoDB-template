@@ -64,7 +64,7 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 	customerRoutes.POST("", userHandler.CreateCustomer)
 	// customerRoutes.GET("", userHandler.ListCustomers)
 	// customerRoutes.GET("/:id", userHandler.GetCustomerByID)
-	// customerRoutes.PATCH("/:id", userHandler.UpdateCustomer)
+	customerRoutes.PATCH("/:id", userHandler.UpdateCustomer)
 	// customerRoutes.PATCH("/:id/status", userHandler.UpdateCustomerStatus)
 	// customerRoutes.DELETE("/:id", userHandler.DeleteCustomer)
 

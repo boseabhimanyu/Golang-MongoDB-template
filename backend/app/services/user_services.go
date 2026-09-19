@@ -575,3 +575,23 @@ func (s *UserService) ChangeUserPassword(
 		string(passwordHash),
 	)
 }
+
+func (s *UserService) UpdateCustomer(
+	ctx context.Context,
+	customerID string,
+	req *dto.UpdateUserProfileRequest,
+) (*models.User, error) {
+	customer, err := s.userRepository.FindByID(
+		ctx,
+		customerID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if customer.Role != models.RoleCustomer {
+		return nil, ErrInvalidUserRole
+	}
+
+	return s.UpdateProfile(ctx, customerID, req)
+}
