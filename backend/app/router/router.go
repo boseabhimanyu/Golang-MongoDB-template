@@ -51,5 +51,22 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 		protected.GET("/me", userHandler.Me)
 	}
 
+	customerRoutes := r.Group("/api/v1/customers")
+
+	customerRoutes.Use(
+		auth.AuthMiddleware(
+			cfg.JWTSecret,
+			cfg.AuthAccessCookie,
+		),
+		auth.RequireRoles("admin"),
+	)
+
+	customerRoutes.POST("", userHandler.CreateCustomer)
+	// customerRoutes.GET("", userHandler.ListCustomers)
+	// customerRoutes.GET("/:id", userHandler.GetCustomerByID)
+	// customerRoutes.PATCH("/:id", userHandler.UpdateCustomer)
+	// customerRoutes.PATCH("/:id/status", userHandler.UpdateCustomerStatus)
+	// customerRoutes.DELETE("/:id", userHandler.DeleteCustomer)
+
 	return r
 }

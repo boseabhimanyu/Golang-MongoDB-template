@@ -415,18 +415,22 @@ func (s *UserService) CreateCustomer(
 	ctx context.Context,
 	req *dto.RegisterRequest,
 ) (*models.User, error) {
-
 	if req == nil {
 		return nil, errors.New("create customer request is required")
 	}
 
-	// Validate required fields.
-	firstName, err := validation.ValidateName(req.FirstName, "first name")
+	firstName, err := validation.ValidateName(
+		req.FirstName,
+		"first name",
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	lastName, err := validation.ValidateName(req.LastName, "last name")
+	lastName, err := validation.ValidateName(
+		req.LastName,
+		"last name",
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -441,6 +445,15 @@ func (s *UserService) CreateCustomer(
 		return nil, err
 	}
 
+	altEmail, err := validation.ValidateEmail(req.AltEmail, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if altEmail != "" && altEmail == email {
+		return nil, ErrAltEmailSameAsEmail
+	}
+
 	phone, err := validation.ValidatePhone(req.Phone)
 	if err != nil {
 		return nil, err
@@ -450,33 +463,48 @@ func (s *UserService) CreateCustomer(
 		return nil, err
 	}
 
-	// Validate optional alternate email.
-	altEmail, err := validation.ValidateEmail(req.AltEmail, false)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check duplicate email.
 	existingUser, err := s.userRepository.FindByAnyEmail(ctx, email)
 	if err == nil && existingUser != nil {
 		return nil, ErrEmailAlreadyExists
 	}
 
-	if !errors.Is(err, repository.ErrUserNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
 		return nil, err
 	}
 
-	// Check duplicate username.
+	if altEmail != "" {
+		existingUser, err = s.userRepository.FindByAnyEmail(
+			ctx,
+			altEmail,
+		)
+		if err == nil && existingUser != nil {
+			return nil, ErrAltEmailAlreadyExists
+		}
+
+		if err != nil &&
+			!errors.Is(err, repository.ErrUserNotFound) {
+			return nil, err
+		}
+	}
+
 	existingUser, err = s.userRepository.FindByUsername(ctx, username)
 	if err == nil && existingUser != nil {
 		return nil, ErrUsernameAlreadyExists
 	}
 
-	if !errors.Is(err, repository.ErrUserNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
 		return nil, err
 	}
 
-	// Hash password.
+	existingUser, err = s.userRepository.FindByPhone(ctx, phone)
+	if err == nil && existingUser != nil {
+		return nil, ErrPhoneAlreadyExists
+	}
+
+	if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
+		return nil, err
+	}
+
 	passwordHash, err := bcrypt.GenerateFromPassword(
 		[]byte(req.Password),
 		bcrypt.DefaultCost,
@@ -485,7 +513,6 @@ func (s *UserService) CreateCustomer(
 		return nil, err
 	}
 
-	// Always create a customer.
 	user := models.NewCustomerUser()
 
 	user.FirstName = firstName

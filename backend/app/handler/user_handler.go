@@ -130,3 +130,48 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		"user":    user,
 	})
 }
+
+func (h *UserHandler) CreateCustomer(c *gin.Context) {
+	var req dto.RegisterRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	user, err := h.userService.CreateCustomer(
+		c.Request.Context(),
+		&req,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrEmailAlreadyExists),
+			errors.Is(err, services.ErrAltEmailAlreadyExists),
+			errors.Is(err, services.ErrUsernameAlreadyExists),
+			errors.Is(err, services.ErrPhoneAlreadyExists):
+			c.JSON(http.StatusConflict, gin.H{
+				"error": err.Error(),
+			})
+
+		case errors.Is(err, services.ErrAltEmailSameAsEmail):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		default:
+			// Validation errors reach here.
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "customer created successfully",
+		"user":    user,
+	})
+}
