@@ -6,8 +6,12 @@ import (
 	mongorepo "basic-app/repository/mongo"
 	"basic-app/router"
 	"context"
-	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,12 +19,14 @@ import (
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Config Error: %v", err)
+		log.Printf("Config Error: %v", err)
+		return
 	}
 
 	client, db, err := database.Connect(cfg)
 	if err != nil {
-		log.Fatalf("DB Error: %v", err)
+		log.Printf("DB Error: %v", err)
+		return
 	}
 
 	defer func() {
@@ -30,11 +36,12 @@ func main() {
 	}()
 
 	// Ensure MongoDB indexes exist
-	if err := mongorepo.EnsureUserIndexes(
-		context.Background(),
-		db,
-	); err != nil {
-		log.Fatalf("Failed to create user indexes: %v", err)
+	indexCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := mongorepo.EnsureUserIndexes(indexCtx, db); err != nil {
+		log.Printf("Failed to create user indexes: %v", err)
+		return
 	}
 
 	gin.SetMode(cfg.GinMode)
@@ -43,11 +50,42 @@ func main() {
 
 	engine := router.NewRouter(db, cfg)
 
-	addr := fmt.Sprintf(":%s", cfg.ServerPort)
+	addr := ":" + cfg.ServerPort
 
-	log.Printf("Server listening on http://localhost%s", addr)
-
-	if err := engine.Run(addr); err != nil {
-		log.Fatalf("Server Failed: %v", err)
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           engine,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
+
+	// Start HTTP server
+	go func() {
+		log.Printf("Server listening on http://localhost%s", addr)
+
+		if err := server.ListenAndServe(); err != nil &&
+			err != http.ErrServerClosed {
+			log.Printf("Server Failed: %v", err)
+		}
+	}()
+
+	// Wait for shutdown signal
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	<-stop
+
+	log.Println("Shutdown signal received")
+
+	// Allow active requests to complete
+	shutdownCtx, shutdownCancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server shutdown error: %v", err)
+	}
+
+	log.Println("Server stopped")
 }
