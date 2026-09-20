@@ -9,6 +9,13 @@ import (
 
 var ErrUserNotFound = errors.New("user not found")
 
+type CustomerListFilter struct {
+	Status *bool
+	Search string
+	Skip   int64
+	Limit  int64
+}
+
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 
@@ -44,4 +51,9 @@ type UserRepository interface {
 	Deactivate(ctx context.Context, userID string) error
 
 	Delete(ctx context.Context, userID string) error
+
+	ListCustomers(
+		ctx context.Context,
+		filter CustomerListFilter,
+	) ([]models.User, int64, error)
 }

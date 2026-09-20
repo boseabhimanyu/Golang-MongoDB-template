@@ -1,5 +1,7 @@
 package dto
 
+import "basic-app/models"
+
 // UpdateUserProfileRequest contains fields that can be
 // partially updated.
 //
@@ -21,4 +23,23 @@ type UpdateUserProfileRequest struct {
 
 type ChangeUserPasswordRequest struct {
 	NewPassword string `json:"newPassword"`
+}
+
+type ListCustomersQuery struct {
+	Page   int    `form:"page"`
+	Limit  int    `form:"limit"`
+	Status *bool  `form:"status"`
+	Search string `form:"search"`
+}
+
+type CustomerListResponse struct {
+	Customers  []models.User `json:"customers"`
+	Pagination Pagination    `json:"pagination"`
+}
+
+type Pagination struct {
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit"`
+	Total      int64 `json:"total"`
+	TotalPages int64 `json:"totalPages"`
 }

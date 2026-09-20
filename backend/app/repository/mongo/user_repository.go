@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	mongodriver "go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const databaseTimeout = 5 * time.Second
@@ -453,4 +455,66 @@ func (r *UserRepository) FindByLoginIdentifier(
 	}
 
 	return &user, nil
+}
+
+func (r *UserRepository) ListCustomers(
+	ctx context.Context,
+	listFilter repository.CustomerListFilter,
+) ([]models.User, int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, databaseTimeout)
+	defer cancel()
+
+	filter := bson.M{
+		"role": models.RoleCustomer,
+	}
+
+	if listFilter.Status != nil {
+		filter["status"] = *listFilter.Status
+	}
+
+	if listFilter.Search != "" {
+		searchRegex := bson.Regex{
+			Pattern: regexp.QuoteMeta(listFilter.Search),
+			Options: "i",
+		}
+
+		filter["$or"] = bson.A{
+			bson.M{"first_name": searchRegex},
+			bson.M{"last_name": searchRegex},
+			bson.M{"username": searchRegex},
+			bson.M{"email": searchRegex},
+			bson.M{"alt_email": searchRegex},
+			bson.M{"phone": searchRegex},
+		}
+	}
+
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	findOptions := options.Find().
+		SetSkip(listFilter.Skip).
+		SetLimit(listFilter.Limit).
+		SetSort(bson.D{
+			{Key: "created_at", Value: -1},
+		})
+
+	cursor, err := r.collection.Find(
+		ctx,
+		filter,
+		findOptions,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer cursor.Close(ctx)
+
+	var customers []models.User
+
+	if err := cursor.All(ctx, &customers); err != nil {
+		return nil, 0, err
+	}
+
+	return customers, total, nil
 }

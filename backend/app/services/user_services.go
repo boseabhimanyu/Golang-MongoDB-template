@@ -31,6 +31,8 @@ var (
 	ErrInvalidCredentials    = errors.New("invalid credentials")
 	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
 	ErrNoFieldsToUpdate      = errors.New("no fields to update")
+	ErrInvalidPage           = errors.New("page must be greater than zero")
+	ErrInvalidLimit          = errors.New("limit must be between 1 and 100")
 )
 
 type UserService struct {
@@ -594,4 +596,57 @@ func (s *UserService) UpdateCustomer(
 	}
 
 	return s.UpdateProfile(ctx, customerID, req)
+}
+
+func (s *UserService) ListCustomers(
+	ctx context.Context,
+	query dto.ListCustomersQuery,
+) (*dto.CustomerListResponse, error) {
+	page := query.Page
+	if page == 0 {
+		page = 1
+	}
+
+	if page < 1 {
+		return nil, ErrInvalidPage
+	}
+
+	limit := query.Limit
+	if limit == 0 {
+		limit = 20
+	}
+
+	if limit < 1 || limit > 100 {
+		return nil, ErrInvalidLimit
+	}
+
+	search := strings.TrimSpace(query.Search)
+
+	customers, total, err := s.userRepository.ListCustomers(
+		ctx,
+		repository.CustomerListFilter{
+			Status: query.Status,
+			Search: search,
+			Skip:   int64(page-1) * int64(limit),
+			Limit:  int64(limit),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := int64(0)
+	if total > 0 {
+		totalPages = (total + int64(limit) - 1) / int64(limit)
+	}
+
+	return &dto.CustomerListResponse{
+		Customers: customers,
+		Pagination: dto.Pagination{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	}, nil
 }

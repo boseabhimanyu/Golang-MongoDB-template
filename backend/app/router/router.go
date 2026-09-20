@@ -62,7 +62,25 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 	)
 
 	customerRoutes.POST("", userHandler.CreateCustomer)
-	// customerRoutes.GET("", userHandler.ListCustomers)
+
+	// List customers.
+	//
+	// Pagination:
+	// GET /api/v1/customers?page=1&limit=20
+	//
+	// Filter by account status:
+	// GET /api/v1/customers?status=true
+	// GET /api/v1/customers?status=false
+	//
+	// Search across first name, last name, username, email,
+	// alternate email, and phone:
+	// GET /api/v1/customers?search=rahul
+	//
+	// Filters can be combined:
+	// GET /api/v1/customers?page=1&limit=20&status=true&search=rahul
+
+	customerRoutes.GET("", userHandler.ListCustomers)
+
 	// customerRoutes.GET("/:id", userHandler.GetCustomerByID)
 	customerRoutes.PATCH("/:id", userHandler.UpdateCustomer)
 	// customerRoutes.PATCH("/:id/status", userHandler.UpdateCustomerStatus)

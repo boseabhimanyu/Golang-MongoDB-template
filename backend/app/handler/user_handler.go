@@ -238,3 +238,37 @@ func (h *UserHandler) UpdateCustomer(c *gin.Context) {
 		"user":    user,
 	})
 }
+
+func (h *UserHandler) ListCustomers(c *gin.Context) {
+	var query dto.ListCustomersQuery
+
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid query parameters",
+		})
+		return
+	}
+
+	result, err := h.userService.ListCustomers(
+		c.Request.Context(),
+		query,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrInvalidPage),
+			errors.Is(err, services.ErrInvalidLimit):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "unable to fetch customers",
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
