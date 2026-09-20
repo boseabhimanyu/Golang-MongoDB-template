@@ -272,3 +272,41 @@ func (h *UserHandler) ListCustomers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+func (h *UserHandler) GetCustomerByID(c *gin.Context) {
+	customerID := c.Param("id")
+
+	user, err := h.userService.GetCustomerByID(
+		c.Request.Context(),
+		customerID,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrInvalidUserID):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		case errors.Is(err, repository.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "customer not found",
+			})
+
+		case errors.Is(err, services.ErrInvalidUserRole):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "target user is not a customer",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "unable to fetch customer",
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"customer": user,
+	})
+}

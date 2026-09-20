@@ -65,36 +65,20 @@ func (s *UserService) GetByID(
 	)
 }
 
-// GetByEmail returns a user by email.
-func (s *UserService) GetByEmail(
+func (s *UserService) GetCustomerByID(
 	ctx context.Context,
-	email string,
+	customerID string,
 ) (*models.User, error) {
-	email = strings.ToLower(
-		strings.TrimSpace(email),
-	)
+	user, err := s.userRepository.FindByID(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
 
-	return s.userRepository.FindByAnyEmail(
-		ctx,
-		email,
-	)
+	if user.Role != models.RoleCustomer {
+		return nil, ErrInvalidUserRole
+	}
 
-}
-
-// GetByUsername returns a user by username.
-func (s *UserService) GetByUsername(
-	ctx context.Context,
-	username string,
-) (*models.User, error) {
-	username = strings.TrimSpace(
-		username,
-	)
-
-	return s.userRepository.FindByUsername(
-		ctx,
-		username,
-	)
-
+	return user, nil
 }
 
 // UpdateProfile updates general user information.
