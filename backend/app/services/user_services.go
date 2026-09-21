@@ -19,23 +19,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	ErrEmailAlreadyExists    = errors.New("email already exists")
-	ErrAltEmailAlreadyExists = errors.New("alternate email already exists")
-	ErrAltEmailSameAsEmail   = errors.New("alternate email must be different from email")
-	ErrUsernameAlreadyExists = errors.New("username already exists")
-	ErrPhoneAlreadyExists    = errors.New("phone number already exists")
-	ErrInvalidUserID         = errors.New("invalid user id")
-	ErrInvalidPassword       = errors.New("invalid password")
-	ErrInvalidUserRole       = errors.New("invalid user role")
-	ErrInvalidCredentials    = errors.New("invalid credentials")
-	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
-	ErrNoFieldsToUpdate      = errors.New("no fields to update")
-	ErrInvalidPage           = errors.New("page must be greater than zero")
-	ErrInvalidLimit          = errors.New("limit must be between 1 and 100")
-	ErrCannotChangeOwnStatus = errors.New("admin cannot change their own account status")
-)
-
 type UserService struct {
 	userRepository repository.UserRepository
 }
@@ -303,12 +286,14 @@ func (s *UserService) UpdateProfilePic(
 	userID string,
 	fileHeader *multipart.FileHeader,
 ) error {
-	if strings.TrimSpace(userID) == "" {
+	userID = strings.TrimSpace(userID)
+
+	if userID == "" {
 		return ErrInvalidUserID
 	}
 
 	if fileHeader == nil {
-		return errors.New("profile picture is required")
+		return errors.New("Profile picture is required")
 	}
 
 	const maxFileSize = 5 * 1024 * 1024
@@ -326,13 +311,13 @@ func (s *UserService) UpdateProfilePic(
 		return errors.New("profile picture must be JPEG, PNG, or WebP")
 	}
 
-	// Make sure the target user exists.
-	user, err := s.userRepository.FindByID(ctx, strings.TrimSpace(userID))
+	// Get the existing user so we can keep track of the old profile image.
+	user, err := s.userRepository.FindByID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	_ = user
+	oldProfilePic := strings.TrimSpace(user.ProfilePic)
 
 	uploadDir := filepath.Join("Uploads", "profiles")
 
@@ -342,17 +327,42 @@ func (s *UserService) UpdateProfilePic(
 
 	fileID := uuid.New().String()
 	filename := fileID + ext
-
 	filePath := filepath.Join(uploadDir, filename)
 
+	// Save the new image first.
 	if err := saveUploadedFile(fileHeader, filePath); err != nil {
 		return err
 	}
 
-	return s.userRepository.UpdateProfilePic(
+	// Update MongoDB with the new image path.
+	if err := s.userRepository.UpdateProfilePic(
 		ctx,
 		userID,
 		filePath,
+	); err != nil {
+		// DB update failed, so remove the newly uploaded file.
+		_ = os.Remove(filePath)
+
+		return err
+	}
+
+	// DB update succeeded, so the old image is no longer needed.
+	if oldProfilePic != "" &&
+		oldProfilePic != filePath &&
+		isLocalProfilePic(oldProfilePic) {
+		_ = os.Remove(oldProfilePic)
+	}
+
+	return nil
+}
+
+func isLocalProfilePic(path string) bool {
+	cleanPath := filepath.Clean(path)
+	profileDir := filepath.Clean(filepath.Join("Uploads", "profiles"))
+
+	return strings.HasPrefix(
+		cleanPath,
+		profileDir+string(os.PathSeparator),
 	)
 }
 

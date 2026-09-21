@@ -15,6 +15,8 @@ import (
 func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 	r := gin.Default()
 
+	r.Static("/Uploads", "./Uploads") // Expose file uploads
+
 	// Dependencies
 	userRepository := mongorepo.NewUserRepository(database)
 	authService := services.NewAuthService(userRepository, cfg)
@@ -48,6 +50,7 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 		protected.POST("/refresh", authHandler.Refresh)
 		protected.POST("/logout", authHandler.Logout)
 		protected.PATCH("/me", userHandler.UpdateProfile)
+		protected.PATCH("/me/image", userHandler.UpdateProfilePic)
 		protected.GET("/me", userHandler.Me)
 	}
 

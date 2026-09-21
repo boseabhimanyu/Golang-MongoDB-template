@@ -1,0 +1,20 @@
+package services
+
+import "errors"
+
+var (
+	ErrEmailAlreadyExists    = errors.New("email already exists")
+	ErrAltEmailAlreadyExists = errors.New("alternate email already exists")
+	ErrAltEmailSameAsEmail   = errors.New("alternate email must be different from primary email")
+	ErrUsernameAlreadyExists = errors.New("username already exists")
+	ErrPhoneAlreadyExists    = errors.New("phone number already exists")
+	ErrInvalidUserID         = errors.New("invalid user id")
+	ErrInvalidPassword       = errors.New("invalid password")
+	ErrInvalidUserRole       = errors.New("invalid user role")
+	ErrInvalidCredentials    = errors.New("invalid credentials")
+	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
+	ErrNoFieldsToUpdate      = errors.New("no fields to update")
+	ErrInvalidPage           = errors.New("page must be greater than zero")
+	ErrInvalidLimit          = errors.New("limit must be between 1 and 100")
+	ErrCannotChangeOwnStatus = errors.New("admin cannot change their own account status")
+)

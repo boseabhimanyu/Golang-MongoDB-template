@@ -2,117 +2,109 @@
 
 ### Core
 
-Go + Gin
+ - Go + Gin
 
-MongoDB
+ - MongoDB
 
-JWT authentication
+ - JWT authentication
 
-Configuration management
+ - Configuration management
 
-REST API
+ - REST API
 
-Environment-based configuration
+ - Environment-based configuration
 
 ### Authentication & Authorization
 
-Login / Logout
+ - Login / Logout
 
-JWT access & refresh tokens
+ - JWT access & refresh tokens
 
-Token refresh / session management
+ - Token refresh / session management
 
-Password hashing
+ - Password hashing
 
-Role-based access control
+ - Role-based access control
 
-Roles: `Admin`, `Customer`
+ - Roles: `Admin`, `Customer`
 
 ### Customer
 
-Register
+ - Register
 
-    Username
+    -  Username
 
-    Email
+    -  Email
 
-    Alternative email (optional)
+    -  Alternative email (optional)
 
-    Password
+    -  Password
 
-Login with username/email
+ - Login with username/email
 
-Logout
+ - Logout
 
-View/update profile
+ - View/update profile
 
-Change password
+ - Change password
 
-Refresh session
+ - Refresh session
 
 ### Admin
 
-View/update own profile
+ - View/update own profile
 
-Change own password
+ - Change own password
 
-Create customer
+ - Create customer
 
-Update customer
+ - Update customer
 
-Search customers
+ - Search customers
 
-Get customer by ID
+ - Get customer by ID
 
-Change customer status
+ - Change customer status
 
-Change customer password
+ - Change customer password
 
 ### Database
 
-MongoDB connection
+ - MongoDB connection
 
-Connection management
+ - Connection management
 
-Indexes
+ - Indexes
 
-Repository layer
+ - Repository layer
 
 ### Security
 
-Password hashing
+ - Password hashing
 
-Access/refresh token rotation
+ - Access/refresh token rotation
 
-Input validation
+ - Input validation
 
-Rate limiting
+ - Rate limiting
 
-CORS
+ - CORS
 
-Authentication & authorization middleware
+ - Authentication & authorization middleware
 
 ### Boilerplate Essentials
 
-Standard API response/error format
+ - Standard API response/error format
 
-Request validation
+ - Request validation
 
-Pagination & filtering
+ - Pagination & filtering
 
-Logging
+ - Logging
 
-Health check
+ - Health check
 
-Swagger/OpenAPI
-
-Unit/integration tests
-
-Docker / Docker Compose
-
-Graceful shutdown
-
-Audit logging
+ - Graceful shutdown
 
 `.env.example`
 

@@ -422,3 +422,75 @@ func (h *UserHandler) ChangeUserPassword(c *gin.Context) {
 		"message": "user password changed successfully",
 	})
 }
+
+func (h *UserHandler) UpdateProfilePic(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	userIDString, ok := userID.(string)
+	if !ok || strings.TrimSpace(userIDString) == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid user identity",
+		})
+		return
+	}
+
+	if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid multipart form",
+		})
+		return
+	}
+
+	files := c.Request.MultipartForm.File["profile_pic"]
+
+	if len(files) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "profile picture is required",
+		})
+		return
+	}
+
+	if len(files) > 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "only one profile picture can be uploaded at a time",
+		})
+		return
+	}
+
+	fileHeader := files[0]
+
+	if err := h.userService.UpdateProfilePic(
+		c.Request.Context(),
+		userIDString,
+		fileHeader,
+	); err != nil {
+		switch {
+		case errors.Is(err, services.ErrInvalidUserID):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		case errors.Is(err, services.ErrInvalidUserRole):
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": err.Error(),
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "profile picture updated successfully",
+	})
+}
