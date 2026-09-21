@@ -83,7 +83,7 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 
 	customerRoutes.GET("/:id", userHandler.GetCustomerByID)
 	customerRoutes.PATCH("/:id", userHandler.UpdateCustomer)
-	// customerRoutes.PATCH("/:id/status", userHandler.UpdateCustomerStatus)
+	customerRoutes.PATCH("/:id/status", userHandler.UpdateUserStatus)
 	// customerRoutes.DELETE("/:id", userHandler.DeleteCustomer)
 
 	return r

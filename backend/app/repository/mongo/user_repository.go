@@ -303,10 +303,11 @@ func (r *UserRepository) UpdateRefreshToken(
 	return nil
 }
 
-// Deactivate disables a user account without deleting it.
-func (r *UserRepository) Deactivate(
+// Change user account status without deleting it.
+func (r *UserRepository) UserStatus(
 	ctx context.Context,
 	userID string,
+	status bool,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, databaseTimeout)
 	defer cancel()
@@ -318,7 +319,7 @@ func (r *UserRepository) Deactivate(
 
 	update := bson.M{
 		"$set": bson.M{
-			"status":     false,
+			"status":     status,
 			"updated_at": time.Now().UTC(),
 		},
 	}

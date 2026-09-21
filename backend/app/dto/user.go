@@ -43,3 +43,7 @@ type Pagination struct {
 	Total      int64 `json:"total"`
 	TotalPages int64 `json:"totalPages"`
 }
+
+type UserStatusRequest struct {
+	Status bool `json:"status"`
+}

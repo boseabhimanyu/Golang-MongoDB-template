@@ -310,3 +310,50 @@ func (h *UserHandler) GetCustomerByID(c *gin.Context) {
 		"customer": user,
 	})
 }
+
+func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
+	adminID := c.GetString("userID")
+	targetUserID := c.Param("id")
+
+	var req dto.UserStatusRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	err := h.userService.UserStatus(
+		c.Request.Context(),
+		adminID,
+		targetUserID,
+		req.Status,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrCannotChangeOwnStatus):
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "you cannot change your own account status",
+			})
+
+		case errors.Is(err, repository.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "user not found",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "failed to update user status",
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "user status updated successfully",
+		"status":  req.Status,
+	})
+}

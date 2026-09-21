@@ -48,7 +48,8 @@ type UserRepository interface {
 		refreshTokenHash string,
 	) error
 
-	Deactivate(ctx context.Context, userID string) error
+	UserStatus(
+		ctx context.Context, userID string, status bool) error
 
 	Delete(ctx context.Context, userID string) error
 

@@ -33,6 +33,7 @@ var (
 	ErrNoFieldsToUpdate      = errors.New("no fields to update")
 	ErrInvalidPage           = errors.New("page must be greater than zero")
 	ErrInvalidLimit          = errors.New("limit must be between 1 and 100")
+	ErrCannotChangeOwnStatus = errors.New("admin cannot change their own account status")
 )
 
 type UserService struct {
@@ -375,14 +376,21 @@ func saveUploadedFile(
 	return err
 }
 
-// DeactivateUser disables a user account.
-func (s *UserService) DeactivateUser(
+// Status of user account
+func (s *UserService) UserStatus(
 	ctx context.Context,
+	adminID string,
 	userID string,
+	status bool,
 ) error {
-	return s.userRepository.Deactivate(
+	if adminID == userID {
+		return ErrCannotChangeOwnStatus
+	}
+
+	return s.userRepository.UserStatus(
 		ctx,
 		userID,
+		status,
 	)
 }
 
