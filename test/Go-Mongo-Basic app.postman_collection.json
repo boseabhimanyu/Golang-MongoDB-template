@@ -1,0 +1,504 @@
+{
+  "info": {
+    "_postman_id": "d4e99a0d-1996-499e-b3b4-d4d0cc912246",
+    "name": "Go-Mongo-Basic app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "27437251",
+    "_collection_link": "https://go.postman.co/collection/27437251-d4e99a0d-1996-499e-b3b4-d4d0cc912246?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Priya\",\n  \"lastName\": \"Pathak\",\n  \"username\": \"priyap\",\n  \"email\": \"priya@example.com\",\n//   \"altEmail\": \"neeraj@example.com\",\n  \"phone\": \"9685745896\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"johnf\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"suresh12\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/logout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"suresh12\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update profile info",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"firstName\": \"Suresh\",\n//   \"lastName\": \"Raina\",\n//   \"username\": \"suresh12\",\n//   \"email\": \"suresh@example.com\",\n//   \"altEmail\": \"suresh.alt@example.com\",\n//   \"phone\": \"9876543210\",\n//   \"dateOfBirth\": \"1990-12-15T00:00:00Z\",\n//   \"addressLine1\": \"12 Marine Drive\",\n//   \"addressLine2\": \"Near Gateway of India\",\n//   \"city\": \"Mumbai\",\n//   \"state\": \"Maharashtra\",\n//   \"pinCode\": \"400001\"\n// }\n\n{\n//   \"firstName\": \"John\",\n//   \"lastName\": \"Fatso\",\n//   \"username\": \"suresh12\",\n//   \"email\": \"priya@example.com\",\n  \"altEmail\": \"rahul.alt@example.com\",\n//   \"phone\": \"9685745678\",\n  \"dateOfBirth\": \"16-07-1986\",\n  \"addressLine1\": \"Jessore Road\",\n  \"addressLine2\": \"\",\n  \"city\": \"Madhyamgram\",\n  \"state\": \"West Bengal\",\n  \"pinCode\": \"700129\"\n}\n\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload/update profile image",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "profile_pic",
+                  "type": "file",
+                  "uuid": "be3b3e34-d677-442c-ad65-2bef60a43b49",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/me/image",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me",
+                "image"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update password",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password@123\",\n  \"newPassword\": \"Cat@1234\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"suresh12\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/auth/refresh",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Create customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"firstName\": \"Rahul\",\n//   \"lastName\": \"Sharma\",\n//   \"username\": \"rahulsharma\",\n//   \"email\": \"rahul@example.com\",\n//   \"altEmail\": \"rahul.personal@example.com\",\n//   \"phone\": \"9876543210\",\n//   \"password\": \"Password@123\"\n// }\n\n{\n  \"firstName\": \"Ramesh\",\n  \"lastName\": \"Sharma\",\n  \"username\": \"ramesh\",\n  \"email\": \"ramesh@example.com\",\n  \"altEmail\": \"ramesh.alt@example.com\",\n  \"phone\": \"6952365445\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/customers",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"firstName\": \"Rahul\",\n//   \"lastName\": \"Sharma\",\n//   \"username\": \"rahulsharma\",\n//   \"email\": \"rahul@example.com\",\n//   \"altEmail\": \"rahul.personal@example.com\",\n//   \"phone\": \"9876543210\",\n//   \"dateOfBirth\": \"15-12-1990\",\n//   \"addressLine1\": \"12 MG Road\",\n//   \"addressLine2\": \"Near Metro Station\",\n//   \"city\": \"Bengaluru\",\n//   \"state\": \"Karnataka\",\n//   \"pinCode\": \"560001\"\n// }\n\n{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sharma\",\n  \"username\": \"rahulsharma\",\n  \"email\": \"rahul@example.com\",\n  \"altEmail\": \"rahul.personal@example.com\",\n  \"phone\": \"9876543210\",\n  \"dateOfBirth\": \"15-12-1990\",\n  \"addressLine1\": \"12 MG Road\",\n  \"addressLine2\": \"Near Metro Station\",\n  \"city\": \"Bengaluru\",\n  \"state\": \"Karnataka\",\n  \"pinCode\": \"560001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/customers/:id",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search customers",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"firstName\": \"Rahul\",\n//   \"lastName\": \"Sharma\",\n//   \"username\": \"rahulsharma\",\n//   \"email\": \"rahul@example.com\",\n//   \"altEmail\": \"rahul.personal@example.com\",\n//   \"phone\": \"9876543210\",\n//   \"password\": \"Password@123\"\n// }\n\n{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sharma\",\n  \"username\": \"rahulsharma\",\n  \"email\": \"rahul@example.com\",\n  \"phone\": \"6952365414\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/customers?search=6545859575",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "6545859575"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change customer status",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/customers/6aacc9f29bc6df245254ccbc/status",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "6aacc9f29bc6df245254ccbc",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change customer password",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"sadsad\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/customers/6aacc9f29bc6df245254ccbc/password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "6aacc9f29bc6df245254ccbc",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get customers by ID",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"firstName\": \"Rahul\",\n//   \"lastName\": \"Sharma\",\n//   \"username\": \"rahulsharma\",\n//   \"email\": \"rahul@example.com\",\n//   \"altEmail\": \"rahul.personal@example.com\",\n//   \"phone\": \"9876543210\",\n//   \"password\": \"Password@123\"\n// }\n\n{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sharma\",\n  \"username\": \"rahulsharma\",\n  \"email\": \"rahul@example.com\",\n  \"phone\": \"6952365414\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:{{port}}/api/v1/customers/6aae0a4123727bd8c5e1f85e",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "6aae0a4123727bd8c5e1f85e"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:{{port}}/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "port",
+      "value": ""
+    }
+  ]
+}
