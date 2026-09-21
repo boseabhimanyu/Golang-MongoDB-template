@@ -63,6 +63,9 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 
 	customerRoutes.POST("", userHandler.CreateCustomer)
 
+	//--------------------------------------------------------------
+	customerRoutes.GET("", userHandler.ListCustomers)
+
 	// List customers.
 	//
 	// Pagination:
@@ -79,12 +82,12 @@ func NewRouter(database *mongo.Database, cfg config.Config) *gin.Engine {
 	// Filters can be combined:
 	// GET /api/v1/customers?page=1&limit=20&status=true&search=rahul
 
-	customerRoutes.GET("", userHandler.ListCustomers)
+	//--------------------------------------------------------------
 
 	customerRoutes.GET("/:id", userHandler.GetCustomerByID)
 	customerRoutes.PATCH("/:id", userHandler.UpdateCustomer)
 	customerRoutes.PATCH("/:id/status", userHandler.UpdateUserStatus)
-	// customerRoutes.DELETE("/:id", userHandler.DeleteCustomer)
+	customerRoutes.PATCH("/:id/password", userHandler.ChangeUserPassword)
 
 	return r
 }

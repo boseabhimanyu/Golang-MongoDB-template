@@ -394,17 +394,6 @@ func (s *UserService) UserStatus(
 	)
 }
 
-// DeleteUser permanently deletes a user.
-func (s *UserService) DeleteUser(
-	ctx context.Context,
-	userID string,
-) error {
-	return s.userRepository.Delete(
-		ctx,
-		userID,
-	)
-}
-
 func (s *UserService) CreateCustomer(
 	ctx context.Context,
 	req *dto.RegisterRequest,
@@ -536,13 +525,13 @@ func (s *UserService) ChangeUserPassword(
 		return errors.New("change user password request is required")
 	}
 
-	if err := validation.ValidatePassword(req.NewPassword); err != nil {
-		return err
-	}
-
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return ErrInvalidUserID
+	}
+
+	if err := validation.ValidatePassword(req.NewPassword); err != nil {
+		return err
 	}
 
 	user, err := s.userRepository.FindByID(ctx, userID)
@@ -550,7 +539,7 @@ func (s *UserService) ChangeUserPassword(
 		return err
 	}
 
-	// For now, administrators can only reset customer passwords.
+	// Administrators can only reset customer passwords.
 	if user.Role != models.RoleCustomer {
 		return ErrInvalidUserRole
 	}

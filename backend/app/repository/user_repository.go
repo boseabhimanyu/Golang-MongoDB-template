@@ -51,8 +51,6 @@ type UserRepository interface {
 	UserStatus(
 		ctx context.Context, userID string, status bool) error
 
-	Delete(ctx context.Context, userID string) error
-
 	ListCustomers(
 		ctx context.Context,
 		filter CustomerListFilter,

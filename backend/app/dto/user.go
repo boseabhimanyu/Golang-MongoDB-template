@@ -45,5 +45,5 @@ type Pagination struct {
 }
 
 type UserStatusRequest struct {
-	Status bool `json:"status"`
+	Status *bool `json:"status"`
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"basic-app/dto"
 	"basic-app/repository"
@@ -313,7 +314,14 @@ func (h *UserHandler) GetCustomerByID(c *gin.Context) {
 
 func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 	adminID := c.GetString("userID")
-	targetUserID := c.Param("id")
+	targetUserID := strings.TrimSpace(c.Param("id"))
+
+	if targetUserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "user id is required",
+		})
+		return
+	}
 
 	var req dto.UserStatusRequest
 
@@ -324,28 +332,86 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 		return
 	}
 
+	if req.Status == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "status is required",
+		})
+		return
+	}
+
 	err := h.userService.UserStatus(
 		c.Request.Context(),
 		adminID,
 		targetUserID,
-		req.Status,
+		*req.Status,
 	)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrCannotChangeOwnStatus):
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": "you cannot change your own account status",
-			})
-
 		case errors.Is(err, repository.ErrUserNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "user not found",
 			})
 
+		case errors.Is(err, services.ErrCannotChangeOwnStatus):
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "you cannot change your own account status",
+			})
+
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "failed to update user status",
+				"error": err.Error(),
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "user status updated successfully",
+		"status":  *req.Status,
+	})
+}
+func (h *UserHandler) ChangeUserPassword(c *gin.Context) {
+	userID := strings.TrimSpace(c.Param("id"))
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "user id is required",
+		})
+		return
+	}
+
+	var req dto.ChangeUserPasswordRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	if err := h.userService.ChangeUserPassword(
+		c.Request.Context(),
+		userID,
+		&req,
+	); err != nil {
+		switch {
+		case errors.Is(err, repository.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "user not found",
+			})
+
+		case errors.Is(err, services.ErrInvalidUserID):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "invalid user id",
+			})
+
+		case errors.Is(err, services.ErrInvalidUserRole):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "password can only be reset for customer users",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
 			})
 		}
 
@@ -353,7 +419,6 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "user status updated successfully",
-		"status":  req.Status,
+		"message": "user password changed successfully",
 	})
 }
